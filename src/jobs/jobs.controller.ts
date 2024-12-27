@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Patch, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Delete, Query } from '@nestjs/common';
 import { JobsService } from './jobs.service';
 import { Job } from './jobs.schema';
 
@@ -12,9 +12,17 @@ export class JobsController {
     return this.jobService.createJob(createJobDto);
   }
 
-  @Get()
-  findAll() {
-    return this.jobService.findAll();
+ @Get()
+  async getJobs(
+    @Query('title') title?: string,
+    @Query('role') role?: string,
+    @Query('location') location?: string,
+    @Query('jobType') jobType?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('experience') experience?: string,
+    @Query('skills') skills?: string
+  ) {
+    return this.jobService.findAll({ title, role, location, jobType, experience, skills, sortBy });
   }
 
   @Get(':id')
