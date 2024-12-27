@@ -34,6 +34,16 @@ export class Job {
 
   @Prop({ type: String, enum: ['Full-Time', 'Part-Time', 'Contract'] })
   jobType: string;
+
+  @Prop({ type: [String],required:true })
+  responsibilities: string[];
+
+  @Prop({ type:[String],requires:true})
+  requirements: string[];
+
+  @Prop({ type:[String],requires:true})
+  niceToHave: string[];
+
 }
 
 export const JobSchema = SchemaFactory.createForClass(Job);
