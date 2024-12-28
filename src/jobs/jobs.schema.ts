@@ -20,7 +20,7 @@ export class Job {
   @Prop({ required: true })
   salary: number;
 
-  @Prop({ required: true })
+  @Prop({ required: true, enum: ['fresher','1-3years','3-5years','5-10years','10-20years'] })
   experience: string;
 
   @Prop({ required: true, enum: ['remote', 'hybrid', 'location'] })

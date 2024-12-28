@@ -12,45 +12,53 @@ export class JobsService {
     return newJob.save();
   }
 
-  async findAll(filters: {
-    title?: string;
-    role?: string;
-    location?: string;
-    jobType?: string;
-    experience?: string;
-    skills?: string;
-    sortBy?: string;
-  }): Promise<Job[]> {
-    const query: any = {};
-  
-    if (filters.title) {
-      query.title = { $regex: filters.title, $options: 'i' };
-    }
-    if (filters.role) {
-      query.role = { $regex: filters.role, $options: 'i' };
-    }
-    if (filters.location) {
-      query.location = filters.location;
-    }
-    if (filters.jobType) {
-      query.jobType = filters.jobType;
-    }
-    if (filters.experience) {
-      query.experience = filters.experience;
-    }
-    if (filters.skills) {
-      query.skills = { $all: filters.skills.split(',') }; 
-    }
-  
-    let sort = {};
-    if (filters.sortBy) {
-      const sortField = filters.sortBy.startsWith('-') ? filters.sortBy.slice(1) : filters.sortBy;
-      const sortOrder = filters.sortBy.startsWith('-') ? -1 : 1;
-      sort = { [sortField]: sortOrder };
-    }
-  
-    return this.jobModel.find(query).sort(sort).exec();
+async findAll(filters: {
+  title?: string;
+  role?: string;
+  location?: string;
+  jobType?: string;
+  salary?: number;
+  experience?: string;
+  skills?: string;
+  sortBy?: string;
+}): Promise<Job[]> {
+  const query: any = {};
+
+  if (filters.title) {
+    query.title = { $regex: filters.title, $options: 'i' }; // Case-insensitive regex for title
   }
+  if (filters.role) {
+    query.role = { $regex: filters.role, $options: 'i' }; // Case-insensitive regex for role
+  }
+  if (filters.location) {
+    query.location = filters.location;
+  }
+  if (filters.jobType) {
+    query.jobType = filters.jobType;
+  }
+  if (filters.experience) {
+    query.experience = filters.experience;
+  }
+  if (filters.skills) {
+    // query.skills = { $all: filters.skills.split(',') }; 
+    const skillsArray = filters.skills.split(',');  // Split input into an array of skills
+    query.skills = { 
+      $in: skillsArray.map(skill => new RegExp(skill, 'i'))  // Case-insensitive regex for each skill
+    };
+    
+    
+  }
+
+  let sort = {};
+  if (filters.sortBy) {
+    const sortField = filters.sortBy.startsWith('-') ? filters.sortBy.slice(1) : filters.sortBy;
+    const sortOrder = filters.sortBy.startsWith('-') ? -1 : 1;
+    sort = { [sortField]: sortOrder };
+  }
+
+  return this.jobModel.find(query).sort(sort).exec();
+}
+
   
 
   async findOne(id: string): Promise<Job> {

@@ -18,11 +18,12 @@ export class JobsController {
     @Query('role') role?: string,
     @Query('location') location?: string,
     @Query('jobType') jobType?: string,
+    @Query('salary') salary?: number,
     @Query('sortBy') sortBy?: string,
     @Query('experience') experience?: string,
     @Query('skills') skills?: string
   ) {
-    return this.jobService.findAll({ title, role, location, jobType, experience, skills, sortBy });
+    return this.jobService.findAll({ title, role, location, jobType, salary, experience, skills, sortBy });
   }
 
   @Get(':id')
