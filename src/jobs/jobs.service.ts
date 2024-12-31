@@ -25,10 +25,10 @@ async findAll(filters: {
   const query: any = {};
 
   if (filters.title) {
-    query.title = { $regex: filters.title, $options: 'i' }; // Case-insensitive regex for title
+    query.title = { $regex: filters.title, $options: 'i' };
   }
   if (filters.role) {
-    query.role = { $regex: filters.role, $options: 'i' }; // Case-insensitive regex for role
+    query.role = { $regex: filters.role, $options: 'i' }; 
   }
   if (filters.location) {
     query.location = filters.location;
@@ -43,7 +43,7 @@ async findAll(filters: {
     // query.skills = { $all: filters.skills.split(',') }; 
     const skillsArray = filters.skills.split(',');  // Split input into an array of skills
     query.skills = { 
-      $in: skillsArray.map(skill => new RegExp(skill, 'i'))  // Case-insensitive regex for each skill
+      $in: skillsArray.map(skill => new RegExp(skill, 'i'))
     };
     
     

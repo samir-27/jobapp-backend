@@ -11,8 +11,8 @@ export class UsersService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {}
 
-  async signup(username: string, email: string, password: string): Promise<{ message: string }> {
-    if (!username || !email || !password) {
+  async signup(name: string, email: string, password: string): Promise<{ message: string }> {
+    if (!name || !email || !password) {
       throw new BadRequestException('All fields are required');
     }
   
@@ -21,18 +21,19 @@ export class UsersService {
       throw new BadRequestException('Email already exists');
     }
   
-    const existingUserByUsername = await this.userModel.findOne({ username });
+    const existingUserByUsername = await this.userModel.findOne({ name });
     if (existingUserByUsername) {
       throw new BadRequestException('Username already exists');
     }
   
     const hashedPassword = bcrypt.hashSync(password, 10);
-    const newUser = new this.userModel({ username, email, password: hashedPassword });
+    const newUser = new this.userModel({ name, email, password: hashedPassword });
     await newUser.save();
   
     return { message: 'Signup successful' };
   }
   
+
 
   async signin(email: string, password: string): Promise<{ token: string }> {
     if (!email || !password) {
@@ -49,7 +50,12 @@ export class UsersService {
       throw new UnauthorizedException('Invalid email or password');
     }
   
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign(
+      { id: user._id, type: 'user' },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+  
     return { token };
   }
   

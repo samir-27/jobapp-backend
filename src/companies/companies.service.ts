@@ -60,9 +60,12 @@ export class CompaniesService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const token = jwt.sign({ id: company._id }, process.env.JWT_SECRET, {
-      expiresIn: '1h',
-    });
+    const token = jwt.sign(
+      { id: company._id, type: 'company' },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+    
     return { token };
   }
 }
