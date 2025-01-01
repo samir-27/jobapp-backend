@@ -32,6 +32,9 @@ export class Job {
   @Prop({ type: String })
   companyName: string;
 
+  @Prop({ type: String, ref: 'Company', required: true })
+  company: string;
+
   @Prop({ type: String, enum: ['Full-Time', 'Part-Time', 'Contract'] })
   jobType: string;
 

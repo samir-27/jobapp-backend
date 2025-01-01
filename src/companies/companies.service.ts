@@ -44,28 +44,31 @@ export class CompaniesService {
 
     return { message: 'Signup successful' };
   }
-
-  async signin(email: string, password: string): Promise<{ token: string }> {
+  
+  async signin(email: string, password: string): Promise<{ token: string, companyId: string }> {
     if (!email || !password) {
       throw new BadRequestException('All fields are required');
     }
-
+  
     const company = await this.companyModel.findOne({ email });
     if (!company) {
       throw new UnauthorizedException('Invalid email or password');
     }
-
+  
     const passwordMatches = bcrypt.compareSync(password, company.password);
     if (!passwordMatches) {
       throw new UnauthorizedException('Invalid email or password');
     }
-
+  
     const token = jwt.sign(
-      { id: company._id, type: 'company' },
+      { id: company._id.toString(), type: 'company' },  // Convert ObjectId to string
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
-    
-    return { token };
+  
+    return { token, companyId: company._id.toString() };  // Ensure companyId is a string
   }
+  
+  
+  
 }

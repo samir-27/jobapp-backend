@@ -7,10 +7,11 @@ import { Job, JobDocument } from './jobs.schema';
 export class JobsService {
   constructor(@InjectModel(Job.name) private jobModel: Model<JobDocument>) {}
 
-  async createJob(createJobDto: Partial<Job>): Promise<Job> {
-    const newJob = new this.jobModel(createJobDto);
+  async createJob(createJobDto: Partial<Job>, companyId: string): Promise<Job> {
+    const newJob = new this.jobModel({ ...createJobDto, company: companyId });
     return newJob.save();
   }
+  
 
 async findAll(filters: {
   title?: string;
@@ -59,7 +60,11 @@ async findAll(filters: {
   return this.jobModel.find(query).sort(sort).exec();
 }
 
-  
+async findJobsByCompany(companyId: string): Promise<Job[]> {
+  return this.jobModel.find({ company: companyId }).exec();
+}
+
+
 
   async findOne(id: string): Promise<Job> {
     const job = await this.jobModel.findById(id).exec();

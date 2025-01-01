@@ -8,9 +8,11 @@ export class JobsController {
   constructor(private readonly jobService: JobsService) {}
 
   @Post()
-  createJob(@Body() createJobDto: Partial<Job>) {
-    return this.jobService.createJob(createJobDto);
+  createJob(@Body() createJobDto: Partial<Job>, @Query('companyId') companyId: string) {
+    return this.jobService.createJob(createJobDto, companyId);
   }
+  
+  
 
  @Get()
   async getJobs(
@@ -25,6 +27,13 @@ export class JobsController {
   ) {
     return this.jobService.findAll({ title, role, location, jobType, salary, experience, skills, sortBy });
   }
+
+  @Get('company/:companyId')
+  findJobsByCompany(@Param('companyId') companyId: string) {
+    return this.jobService.findJobsByCompany(companyId);
+  }
+  
+  
 
   @Get(':id')
   findOne(@Param('id') id: string) {
