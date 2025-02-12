@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post } from "@nestjs/common";
 import { ApplyJobService } from "./applyJob.service";
 
 @Controller("applyjob")
@@ -11,4 +11,10 @@ export class ApplyJobController {
   ) {
     return this.applyJobService.create(body);
   }
+
+  @Get("user/:userId")
+  async findByUser(@Param("userId") userId: string) {
+    return this.applyJobService.findByUser(userId);
+  }
+
 }

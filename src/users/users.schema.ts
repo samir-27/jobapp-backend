@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export type UserDocument = User & Document;
 
@@ -26,12 +26,14 @@ export class User {
   @Prop()
   profileImg: string;
 
-  @Prop({type:String,enum:['diploma','graduation','post-graduation']})
+  @Prop({ type: String, enum: ['diploma', 'graduation', 'post-graduation'] })
   education: string;
 
   @Prop()
-  course:string;
-  
+  course: string;
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Job' }] })
+  appliedJobs: Types.ObjectId[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
