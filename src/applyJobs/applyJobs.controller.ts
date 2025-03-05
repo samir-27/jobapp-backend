@@ -17,4 +17,9 @@ export class ApplyJobController {
     return this.applyJobService.findByUser(userId);
   }
 
+  @Get("job/:jobId")
+  async findByJob(@Param("jobId") jobId: string ){
+    return this.applyJobService.findByJob(jobId)
+  }
+
 }

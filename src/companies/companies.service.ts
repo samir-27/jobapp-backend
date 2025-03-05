@@ -40,6 +40,7 @@ export class CompaniesService {
       email,
       password: hashedPassword,
     });
+    console.log(newCompany);
     await newCompany.save();
 
     return { message: 'Signup successful' };
