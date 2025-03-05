@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -70,6 +71,41 @@ export class CompaniesService {
     return { token, companyId: company._id.toString() };  // Ensure companyId is a string
   }
   
+    async updateCompany(id: string, updateCompaniesDto: Partial<Company> & { currentPassword?: string }): Promise<Company> {
+   
+      if (updateCompaniesDto.password) {
+        const company = await this.companyModel.findById(id);
+        if (!company) {
+          throw new BadRequestException('Company not found');
+        }
+    
+        const isPasswordMatching = bcrypt.compareSync(updateCompaniesDto.currentPassword, company.password);
+        if (!isPasswordMatching) {
+          throw new BadRequestException('Incorrect current password');
+        }
+    
+        updateCompaniesDto.password = bcrypt.hashSync(updateCompaniesDto.password, 10);
+      }
+    
+      const updatedCompany = await this.companyModel.findByIdAndUpdate(
+        id,
+        { $set: updateCompaniesDto },
+        { new: true, runValidators: true }
+      );
+    
+      if (!updatedCompany) {
+        throw new BadRequestException('Company not found');
+      }
+    
+      return updatedCompany;
+    }
   
-  
+
+      async findOne(id: string): Promise<Company> {
+        const user = await this.companyModel.findById(id).exec();
+        if (!user) {
+          throw new NotFoundException(`Company with CompanyID ${id} not found`);
+        }
+        return user;
+      }
 }
