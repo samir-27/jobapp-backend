@@ -1,7 +1,11 @@
-import { Controller, Post, Body, Patch, Param, Get } from '@nestjs/common';
+import { Controller, Post, Body, Patch, Param, Get, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from './users.schema';
+// import { upload } from 'cloudinary.config'
+import { storage } from 'cloudinary.config';
 
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Express } from 'express';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -19,8 +23,13 @@ export class UsersController {
   }
 
   @Patch(':id')
-  updateUser(@Param('id') id: string, @Body() updateUsersDto: Partial<User>) {
-    return this.usersService.updateUser(id, updateUsersDto);
+  @UseInterceptors(FileInterceptor('profileImg', { storage })) // ✅ Correct usage
+  async updateUser(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() updateUsersDto: Partial<User>,
+  ) {
+    return this.usersService.updateUser(id, updateUsersDto, file);
   }
 
   @Get(':id')

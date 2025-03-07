@@ -72,20 +72,25 @@ export class UsersService {
     return { token, userId: user._id.toString() };
   }
 
-  async updateUser(id: string, updateUsersDto: Partial<User> & { currentPassword?: string }): Promise<User> {
- 
-    if (updateUsersDto.password) {
-      const user = await this.userModel.findById(id);
-      if (!user) {
-        throw new BadRequestException('User not found');
-      }
+  async updateUser(
+    id: string,
+    updateUsersDto: Partial<User> & { currentPassword?: string; image?: string }, // ✅ Add 'image' field
+    file?: Express.Multer.File,
+  ): Promise<User> {
+    console.log("🔹 Received update request for user:", id);
+    console.log("🔹 Data received from frontend:", updateUsersDto);
+    console.log("🔹 File received:", file ? file.path : "No file uploaded");
   
-      const isPasswordMatching = bcrypt.compareSync(updateUsersDto.currentPassword, user.password);
-      if (!isPasswordMatching) {
-        throw new BadRequestException('Incorrect current password');
-      }
+    // ✅ Check if 'image' is provided in the request
+    if (updateUsersDto.image) {
+      updateUsersDto.profileImg = updateUsersDto.image;
+      delete updateUsersDto.image; // Remove redundant field
+      console.log("🔹 Assigned profileImg from frontend image field:", updateUsersDto.profileImg);
+    }
   
-      updateUsersDto.password = bcrypt.hashSync(updateUsersDto.password, 10);
+    if (file) {
+      updateUsersDto.profileImg = file.path; // Cloudinary image URL
+      console.log("🔹 Assigned profileImg from uploaded file:", file.path);
     }
   
     const updatedUser = await this.userModel.findByIdAndUpdate(
@@ -95,11 +100,17 @@ export class UsersService {
     );
   
     if (!updatedUser) {
+      console.error("❌ User not found for ID:", id);
       throw new BadRequestException('User not found');
     }
   
+    console.log("✅ User updated successfully:", updatedUser);
     return updatedUser;
   }
+  
+  
+  
+  
   
 
   async findOne(id: string): Promise<User> {
