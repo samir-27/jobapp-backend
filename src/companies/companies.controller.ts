@@ -1,6 +1,8 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { CompaniesService } from './companies.service';
 import { Company } from './companies.schema';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { profileImageStorage } from 'cloudinary.config';
 @Controller('companies')
 export class CompaniesController {
   constructor(private readonly companiesService: CompaniesService) {}
@@ -17,8 +19,13 @@ export class CompaniesController {
   }
 
   @Patch(':id')
-  updateCompany(@Param('id') id: string, @Body() updateCompaniesDto: Partial<Company>) {
-    return this.companiesService.updateCompany(id, updateCompaniesDto);
+  @UseInterceptors(FileInterceptor('logo', { storage: profileImageStorage }))
+  async updateCompany(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+     @Body() updateCompaniesDto: Partial<Company>) 
+     {
+    return this.companiesService.updateCompany(id, updateCompaniesDto,file);
   }
 
   @Get(':id')

@@ -5,6 +5,9 @@ export type CompanyDocument = Company & Document;
 
 @Schema({ timestamps: true })
 export class Company {
+    @Prop()
+    logo: string;
+
     @Prop({ required: true, maxlength: 100 })
     name: string;
 
