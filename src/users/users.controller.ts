@@ -2,7 +2,8 @@ import { Controller, Post, Body, Patch, Param, Get, UseInterceptors, UploadedFil
 import { UsersService } from './users.service';
 import { User } from './users.schema';
 // import { upload } from 'cloudinary.config'
-import { storage } from 'cloudinary.config';
+import { profileImageStorage } from 'cloudinary.config';
+
 
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express } from 'express';
@@ -23,7 +24,7 @@ export class UsersController {
   }
 
   @Patch(':id')
-  @UseInterceptors(FileInterceptor('profileImg', { storage })) // ✅ Correct usage
+  @UseInterceptors(FileInterceptor('profileImg', { storage: profileImageStorage }))
   async updateUser(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,

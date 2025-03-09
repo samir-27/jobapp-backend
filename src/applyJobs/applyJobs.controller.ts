@@ -1,16 +1,30 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { ApplyJobService } from "./applyJob.service";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { resumeStorage } from 'cloudinary.config';
 
 @Controller("applyjob")
 export class ApplyJobController {
   constructor(private readonly applyJobService: ApplyJobService) {}
 
   @Post("create")
+  @UseInterceptors(FileInterceptor('resume', { storage: resumeStorage }))
   async create(
-    @Body() body: { fullName: string; phone: string; address: string; education: string; course: string  }
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: { 
+      userId: string; 
+      jobId: string; 
+      fullName: string; 
+      phone: string; 
+      address: string; 
+      education: string; 
+      course: string;
+    }
   ) {
-    return this.applyJobService.create(body);
+    console.log("apply job body:",body)
+    return this.applyJobService.create(body, file);
   }
+  
 
   @Get("user/:userId")
   async findByUser(@Param("userId") userId: string) {

@@ -11,7 +11,9 @@ export class ApplyJobService {
   @InjectModel(Job.name) private jobModel: Model<Job>,  // Inject Job model
   @InjectModel(User.name) private userModel: Model<User>) {}
 
-  async create(data: any): Promise<ApplyJob> {
+  async create(data: any, file?: Express.Multer.File): Promise<ApplyJob> {
+    console.log("🔹 File received:", file ? file.path : "No file uploaded");
+  
     const existingApplication = await this.applyJobModel.findOne({
       userId: data.userId,
       jobId: data.jobId,
@@ -21,8 +23,11 @@ export class ApplyJobService {
       throw new BadRequestException("You have already applied for this job.");
     }
   
-    const jobApplication = new this.applyJobModel(data);
-    console.log(jobApplication);
+    const jobApplication = new this.applyJobModel({
+      ...data,
+      resumeUrl: file ? file.path : null,
+    });
+  
     await jobApplication.save();
   
     await this.jobModel.findByIdAndUpdate(data.jobId, {
@@ -35,6 +40,7 @@ export class ApplyJobService {
   
     return jobApplication;
   }
+  
   
   async findByUser(userId: string): Promise<ApplyJob[]> {
     return this.applyJobModel.find({ userId }).exec();
