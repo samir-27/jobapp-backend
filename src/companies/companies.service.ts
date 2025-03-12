@@ -155,4 +155,15 @@ export class CompaniesService {
     }
     return user;
   }
+
+    async findAll(): Promise<Company[]> {
+      return this.companyModel.find().exec();
+    }
+
+    async deleteCompany(id: string): Promise<void> {
+      const result = await this.companyModel.findByIdAndDelete(id).exec();
+      if (!result) {
+        throw new NotFoundException(`Job with ID ${id} not found`);
+      }
+    }
 }

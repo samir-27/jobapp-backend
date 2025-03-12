@@ -107,11 +107,6 @@ export class UsersService {
     console.log("✅ User updated successfully:", updatedUser);
     return updatedUser;
   }
-  
-  
-  
-  
-  
 
   async findOne(id: string): Promise<User> {
     const user = await this.userModel.findById(id).exec();
@@ -119,5 +114,16 @@ export class UsersService {
       throw new NotFoundException(`User with UserID ${id} not found`);
     }
     return user;
+  }
+
+  async findAll(): Promise<User[]> {
+    return this.userModel.find().exec();
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    const result = await this.userModel.findByIdAndDelete(id).exec();
+    if (!result) {
+      throw new NotFoundException(`Job with ID ${id} not found`);
+    }
   }
 }                     

@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-
+import { Company } from '../companies/companies.schema';
 export type JobDocument = Job & Document;
 
 @Schema({ timestamps: true })
@@ -23,17 +23,14 @@ export class Job {
   @Prop({ required: true, enum: ['fresher', '1-3years', '3-5years', '5-10years', '10-20years'] })
   experience: string;
 
-  @Prop({ required: true, enum: ['remote', 'hybrid', 'location'] })
+  @Prop({ required: true, enum: ['remote', 'hybrid', 'on-site'] })
   location: string;
 
   @Prop({ default: new Date() })
   postedDate: Date;
 
-  @Prop({ type: String, maxlength: 100 }) // Max 100 characters
-  companyName: string;
-
-  @Prop({ type: String, ref: 'Company', required: true })
-  company: string;
+  @Prop({ type: Types.ObjectId, ref: 'Company', required: true })
+  company: Company;
 
   @Prop({ type: String, enum: ['Full-Time', 'Part-Time', 'Contract'] })
   jobType: string;

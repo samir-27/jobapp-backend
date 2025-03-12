@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Patch, Param, Get, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Post, Body, Patch, Param, Get, UseInterceptors, UploadedFile, Delete } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from './users.schema';
 // import { upload } from 'cloudinary.config'
@@ -10,6 +10,11 @@ import { Express } from 'express';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get()
+  findAll() {
+    return this.usersService.findAll();
+  }
 
   @Post('signup')
   async signup(
@@ -36,6 +41,11 @@ export class UsersController {
   @Get(':id')
   findOne(@Param('id') id: string){
     return this.usersService.findOne(id)
+  }
+
+  @Delete(':id')
+  deleteUser(@Param('id') id: string) {
+    return this.usersService.deleteUser(id);
   }
 
 }
