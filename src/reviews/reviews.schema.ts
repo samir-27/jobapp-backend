@@ -12,9 +12,6 @@ export class Review extends Document {
   @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
   userId: Types.ObjectId;
 
-  @Prop({ required: true, type: Types.ObjectId, ref: 'Product' })
-  productId: Types.ObjectId;
-
   @Prop({ default: 0 })
   likes: number;
 }

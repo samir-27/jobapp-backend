@@ -4,6 +4,7 @@ import { UsersModule } from './users/users.module';
 import { JobsModule } from './jobs/jobs.module';
 import { CompaniesModule } from './companies/companies.module';
 import { ApplyJobModule } from './applyJobs/applyJob.module';
+import { ReviewModule } from './reviews/reviews.module';
 
 @Module({
   imports: [
@@ -11,7 +12,8 @@ import { ApplyJobModule } from './applyJobs/applyJob.module';
     UsersModule,
     JobsModule,
     CompaniesModule,
-    ApplyJobModule
+    ApplyJobModule,
+    ReviewModule
   ],
 })
 export class AppModule {}
