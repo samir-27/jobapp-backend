@@ -17,10 +17,8 @@ export class UsersController {
   }
 
   @Post('signup')
-  async signup(
-    @Body() body: { name: string; email: string; password: string },
-  ) {
-    return this.usersService.signup(body.name, body.email, body.password);
+  async signup(@Body() body: any) {
+    return this.usersService.signup(body);
   }
 
   @Post('signin')

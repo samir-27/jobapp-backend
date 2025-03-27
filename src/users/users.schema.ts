@@ -23,7 +23,16 @@ export class User {
   @Prop({ type: String, maxlength: 255 })
   address: string;
 
+  @Prop({ type: String, maxlength: 6 })
+  pincode: string;
+
   @Prop({ type: String })
+  city: string;
+
+  @Prop({ type: String })
+  state: string;
+
+  @Prop({ type: String , default: 'https://i.pinimg.com/564x/05/5a/91/055a91979264664a1ee12b9453610d82.jpg' })
   profileImg: string;
 
   @Prop({ type: String, enum: ['diploma', 'graduation', 'post-graduation'] })

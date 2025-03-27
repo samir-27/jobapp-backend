@@ -15,35 +15,53 @@ import { promises } from 'dns';
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async signup(
-    name: string,
-    email: string,
-    password: string,
-  ): Promise<{ message: string }> {
+  async signup(userData: {
+    name: string;
+    email: string;
+    password: string;
+    fullname?: string;
+    phone?: string;
+    education?: string;
+    course?: string;
+    address?: string;
+    city?: string;
+    pincode?: string;
+    state?: string;
+  }): Promise<{ message: string }> {
+    const { name, email, password, ...optionalFields } = userData;
+  
+    // Validate required fields
     if (!name || !email || !password) {
-      throw new BadRequestException('All fields are required');
+      throw new BadRequestException('Name, email, and password are required');
     }
-
+  
+    // Check if email already exists
     const existingUser = await this.userModel.findOne({ email });
     if (existingUser) {
       throw new BadRequestException('Email already exists');
     }
-
+  
+    // Check if username already exists
     const existingUserByUsername = await this.userModel.findOne({ name });
     if (existingUserByUsername) {
       throw new BadRequestException('Username already exists');
     }
-
+  
+    // Hash password
     const hashedPassword = bcrypt.hashSync(password, 10);
+  
+    // Create new user with all fields
     const newUser = new this.userModel({
       name,
       email,
       password: hashedPassword,
+      ...optionalFields, // Spread additional optional fields
     });
+  
     await newUser.save();
-
     return { message: 'Signup successful' };
   }
+  
 
   async signin(
     email: string,
