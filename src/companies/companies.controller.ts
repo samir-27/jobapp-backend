@@ -13,10 +13,8 @@ export class CompaniesController {
   }
 
   @Post('signup')
-  async signup(
-    @Body() body: { name: string; email: string; password: string },
-  ) {
-    return this.companiesService.signup(body.name, body.email, body.password);
+  async signup(@Body() body: any) {
+    return this.companiesService.signup(body);
   }
 
   @Post('signin')

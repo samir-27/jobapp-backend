@@ -17,10 +17,20 @@ export class CompaniesService {
   ) {}
 
   async signup(
-    name: string,
-    email: string,
-    password: string,
+    companyData: {
+      name: string,
+      email: string,
+      password: string,
+      slogan: string,
+      description: string,
+      address: string,
+      companySize: string,
+      city: string,
+    }    
+
   ): Promise<{ message: string }> {
+    const { name, email, password, ...optionalFields } = companyData;
+
     if (!name || !email || !password) {
       throw new BadRequestException('All fields are required');
     }
@@ -40,6 +50,7 @@ export class CompaniesService {
       name,
       email,
       password: hashedPassword,
+      ...optionalFields,
     });
     console.log(newCompany);
     await newCompany.save();
