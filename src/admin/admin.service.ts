@@ -36,5 +36,27 @@ export class AdminService {
   
     return admin;
   }
-  
+
+  //hardcoded admin creation on startup
+
+//   async onModuleInit() {
+//     await this.createHardcodedAdmin();
+//   }
+
+//   private async createHardcodedAdmin() {
+//     const email = 'samir@gmail.com';
+//     const password = 'samir1234';
+
+//     const exists = await this.adminModel.findOne({ email });
+//     if (exists) {
+//       console.log(' Admin already exists. Skipping creation.');
+//       return;
+//     }
+
+//     const hashedPassword = await bcrypt.hash(password, 10);
+//     const newAdmin = new this.adminModel({ email, password: hashedPassword });
+//     await newAdmin.save();
+
+//     console.log(` Admin created on startup: ${email}`);
+//   }
 }
