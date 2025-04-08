@@ -5,7 +5,7 @@ export type CompanyDocument = Company & Document;
 
 @Schema({ timestamps: true })
 export class Company {
-    @Prop()
+    @Prop({ default: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQBjgXDUvEHMjJJlT6yMh_kWZ2UKT4Joc7Yqg&s'})
     logo: string;
 
     @Prop({ required: true, maxlength: 100 })
