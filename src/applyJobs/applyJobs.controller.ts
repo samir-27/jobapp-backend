@@ -21,7 +21,7 @@ export class ApplyJobController {
       course: string;
     }
   ) {
-    console.log("apply job body:",body)
+    // console.log("apply job body:",body)
     return this.applyJobService.create(body, file);
   }
   

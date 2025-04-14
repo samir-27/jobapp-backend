@@ -21,14 +21,14 @@ export class AdminService {
   }
   async signIn(email: string, password: string): Promise<Admin> {
     const admin = await this.adminModel.findOne({ email }).exec();
-    console.log('Admin found:', admin);
+    // console.log('Admin found:', admin);
   
     if (!admin) {
       throw new UnauthorizedException('Invalid email or password');
     }
   
     const isMatch = await bcrypt.compare(password, admin.password);
-    console.log('Password match:', isMatch);
+    // console.log('Password match:', isMatch);
   
     if (!isMatch) {
       throw new UnauthorizedException('Invalid email or password');

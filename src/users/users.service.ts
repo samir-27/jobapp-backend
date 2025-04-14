@@ -98,9 +98,9 @@ export class UsersService {
     },
     file?: Express.Multer.File,
   ): Promise<User> {
-    console.log('Received update request for user:', id);
-    console.log('Data received from frontend:', updateUsersDto);
-    console.log('File received:', file ? file.path : 'No file uploaded');
+    // console.log('Received update request for user:', id);
+    // console.log('Data received from frontend:', updateUsersDto);
+    // console.log('File received:', file ? file.path : 'No file uploaded');
   
     // Handle image upload if present
     if (updateUsersDto.image) {
@@ -134,7 +134,7 @@ export class UsersService {
       throw new BadRequestException('User not found');
     }
   
-    console.log('User updated successfully:', updatedUser);
+    // console.log('User updated successfully:', updatedUser);
     return updatedUser;
   }
   
