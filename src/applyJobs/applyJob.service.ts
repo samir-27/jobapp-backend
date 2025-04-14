@@ -12,7 +12,7 @@ export class ApplyJobService {
   @InjectModel(User.name) private userModel: Model<User>) {}
 
   async create(data: any, file?: Express.Multer.File): Promise<ApplyJob> {
-    console.log("🔹 File received:", file ? file.path : "No file uploaded");
+    // console.log("🔹 File received:", file ? file.path : "No file uploaded");
   
     const existingApplication = await this.applyJobModel.findOne({
       userId: data.userId,

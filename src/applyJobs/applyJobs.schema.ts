@@ -12,7 +12,7 @@ export class ApplyJob {
   phone: string;
 
   @Prop({ maxlength: 255 })
-  address: string;  
+  description: string;  
 
   @Prop({ maxlength: 500 })
   profileImg: string;

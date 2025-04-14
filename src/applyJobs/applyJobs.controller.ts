@@ -16,7 +16,7 @@ export class ApplyJobController {
       jobId: string; 
       fullName: string; 
       phone: string; 
-      address: string; 
+      description: string; 
       education: string; 
       course: string;
     }

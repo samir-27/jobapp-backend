@@ -99,30 +99,30 @@ export class CompaniesService {
 
     if (updateCompaniesDto.image) {
       console.log(
-        '🔹 Received image URL from frontend:',
+        '   Received image URL from frontend:',
         updateCompaniesDto.image,
       );
       updateCompaniesDto.logo = updateCompaniesDto.image;
       delete updateCompaniesDto.image;
     } else if (file) {
-      console.log('🔹 Received file from multer:', file.path);
+      console.log('   Received file from multer:', file.path);
       updateCompaniesDto.logo = file.path;
     }
 
-    console.log('🔹 Final logo:', updateCompaniesDto.logo);
+    console.log('   Final logo:', updateCompaniesDto.logo);
 
     // if (updateCompaniesDto.image) {
     //   updateCompaniesDto.logo = updateCompaniesDto.image;
     //   delete updateCompaniesDto.image; // Remove redundant field
     //   console.log(
-    //     '🔹 Assigned logo from frontend image field:',
+    //     '   Assigned logo from frontend image field:',
     //     updateCompaniesDto.logo,
     //   );
     // }
 
     if (file) {
       updateCompaniesDto.logo = file.path; // Cloudinary image URL
-      console.log('🔹 Assigned logo from uploaded file:', file.path);
+      console.log('   Assigned logo from uploaded file:', file.path);
     }
     if (updateCompaniesDto.password) {
       const company = await this.companyModel.findById(id);

@@ -11,16 +11,16 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-console.log(
-  `cloudname: ${process.env.CLOUDINARY_CLOUD_NAME}, api:${process.env.CLOUDINARY_API_KEY}, secret:${process.env.CLOUDINARY_API_SECRET}`
-);
+// console.log(
+//   `cloudname: ${process.env.CLOUDINARY_CLOUD_NAME}, api:${process.env.CLOUDINARY_API_KEY}, secret:${process.env.CLOUDINARY_API_SECRET}`
+// );
 
 // Storage for Profile Images
 export const profileImageStorage = new CloudinaryStorage({
   cloudinary,
   params: (req, file) => ({
     folder: "profile-images",
-    resource_type: "image", // Only images
+    resource_type: "image", 
     format: file.mimetype.split("/")[1], // Keep original format
     public_id: `profile-${Date.now()}-${file.originalname.split(".")[0]}`,
   }),
@@ -31,12 +31,9 @@ export const resumeStorage = new CloudinaryStorage({
   cloudinary,
   params: (req, file) => ({
     folder: "resumes",
-    resource_type: "auto", // Allows PDFs, images, etc.
-    format: file.mimetype.split("/")[1], // Keep original format
+    resource_type: "raw",
     public_id: `resume-${Date.now()}-${file.originalname.split(".")[0]}`,
+    access_mode: "public",
   }),
 });
 
-// Multer Upload Handlers
-export const uploadProfileImage = multer({ storage: profileImageStorage });
-export const uploadResume = multer({ storage: resumeStorage });

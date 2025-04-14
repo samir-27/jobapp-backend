@@ -92,39 +92,52 @@ export class UsersService {
 
   async updateUser(
     id: string,
-    updateUsersDto: Partial<User> & { currentPassword?: string; image?: string }, // ✅ Add 'image' field
+    updateUsersDto: Partial<User> & {
+      currentPassword?: string;
+      image?: string;
+    },
     file?: Express.Multer.File,
   ): Promise<User> {
-    console.log("🔹 Received update request for user:", id);
-    console.log("🔹 Data received from frontend:", updateUsersDto);
-    console.log("🔹 File received:", file ? file.path : "No file uploaded");
+    console.log('Received update request for user:', id);
+    console.log('Data received from frontend:', updateUsersDto);
+    console.log('File received:', file ? file.path : 'No file uploaded');
   
-    // ✅ Check if 'image' is provided in the request
+    // Handle image upload if present
     if (updateUsersDto.image) {
       updateUsersDto.profileImg = updateUsersDto.image;
       delete updateUsersDto.image; // Remove redundant field
-      console.log("🔹 Assigned profileImg from frontend image field:", updateUsersDto.profileImg);
     }
   
     if (file) {
       updateUsersDto.profileImg = file.path; // Cloudinary image URL
-      console.log("🔹 Assigned profileImg from uploaded file:", file.path);
     }
   
-    const updatedUser = await this.userModel.findByIdAndUpdate(
-      id,
-      { $set: updateUsersDto },
-      { new: true, runValidators: true }
-    );
+    // Handle password update if present
+    if (updateUsersDto.password) {
+      const user = await this.userModel.findById(id);
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+  
+      const isPasswordMatching = bcrypt.compareSync(updateUsersDto.currentPassword, user.password);
+      if (!isPasswordMatching) {
+        throw new BadRequestException('Incorrect current password');
+      }
+  
+      updateUsersDto.password = bcrypt.hashSync(updateUsersDto.password, 10); // Hash new password
+    }
+  
+    const updatedUser = await this.userModel.findByIdAndUpdate(id, { $set: updateUsersDto }, { new: true, runValidators: true });
   
     if (!updatedUser) {
-      console.error("❌ User not found for ID:", id);
+      console.error('User not found for ID:', id);
       throw new BadRequestException('User not found');
     }
   
-    console.log("✅ User updated successfully:", updatedUser);
+    console.log('User updated successfully:', updatedUser);
     return updatedUser;
   }
+  
 
   async findOne(id: string): Promise<User> {
     const user = await this.userModel.findById(id).exec();
