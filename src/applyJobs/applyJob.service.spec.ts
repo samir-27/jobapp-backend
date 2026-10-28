@@ -5,6 +5,7 @@ import { ApplyJobService } from './applyJob.service';
 import { ApplyJob } from './applyJobs.schema';
 import { Job } from '../jobs/jobs.schema';
 import { User } from '../users/users.schema';
+import { JobSeekerProfile } from '../profiles/profile.schema';
 import { Types } from 'mongoose';
 
 import { NotificationsService } from '../notifications/notifications.service';
@@ -14,6 +15,7 @@ describe('ApplyJobService (Unit Tests)', () => {
   let mockApplyJobModel: any;
   let mockJobModel: any;
   let mockUserModel: any;
+  let mockProfileModel: any;
 
   const candidateId = new Types.ObjectId().toString();
   const otherCandidateId = new Types.ObjectId().toString();
@@ -73,6 +75,10 @@ describe('ApplyJobService (Unit Tests)', () => {
       findByIdAndUpdate: jest.fn().mockResolvedValue(mockUser),
     };
 
+    mockProfileModel = {
+      findOne: jest.fn().mockResolvedValue(null),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ApplyJobService,
@@ -87,6 +93,10 @@ describe('ApplyJobService (Unit Tests)', () => {
         {
           provide: getModelToken(User.name),
           useValue: mockUserModel,
+        },
+        {
+          provide: getModelToken(JobSeekerProfile.name),
+          useValue: mockProfileModel,
         },
         {
           provide: NotificationsService,

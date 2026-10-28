@@ -9,6 +9,7 @@ import { Model, Types } from 'mongoose';
 import { ApplyJob, ApplyJobDocument } from './applyJobs.schema';
 import { User } from '../users/users.schema';
 import { Job } from '../jobs/jobs.schema';
+import { JobSeekerProfile, ProfileDocument } from '../profiles/profile.schema';
 import { CreateApplyJobDto } from './dto/create-apply-job.dto';
 import { UpdateApplicationStageDto } from './dto/update-stage.dto';
 import { AddCandidateNoteDto } from './dto/add-candidate-note.dto';
@@ -20,6 +21,7 @@ export class ApplyJobService {
     @InjectModel(ApplyJob.name) private applyJobModel: Model<ApplyJobDocument>,
     @InjectModel(Job.name) private jobModel: Model<Job>,
     @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(JobSeekerProfile.name) private profileModel: Model<ProfileDocument>,
     private readonly notificationsService: NotificationsService,
   ) {}
 
@@ -54,7 +56,16 @@ export class ApplyJobService {
     }
 
     const fullname = data.fullname || data.fullName || user.fullname || user.name;
-    const resumeUrl = file ? file.path : data.resumeUrl || null;
+    let resumeUrl = file ? file.path : data.resumeUrl || null;
+
+    if (!resumeUrl) {
+      const candidateProfile = await this.profileModel.findOne({
+        user: new Types.ObjectId(candidateUserId),
+      });
+      if (candidateProfile?.resumeUrl) {
+        resumeUrl = candidateProfile.resumeUrl;
+      }
+    }
 
     const jobApplication = new this.applyJobModel({
       fullname,

@@ -5,6 +5,7 @@ import { ApplyJobService } from './applyJob.service';
 import { ApplyJob, ApplyJobSchema } from './applyJobs.schema';
 import { Job, JobSchema } from '../jobs/jobs.schema';
 import { User, UserSchema } from '../users/users.schema';
+import { JobSeekerProfile, JobSeekerProfileSchema } from '../profiles/profile.schema';
 import { JobsModule } from '../jobs/jobs.module';
 import { UsersModule } from '../users/users.module';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -15,6 +16,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
       { name: ApplyJob.name, schema: ApplyJobSchema },
       { name: Job.name, schema: JobSchema },
       { name: User.name, schema: UserSchema },
+      { name: JobSeekerProfile.name, schema: JobSeekerProfileSchema },
     ]),
     JobsModule,
     UsersModule,
