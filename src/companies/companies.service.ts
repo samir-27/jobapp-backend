@@ -9,6 +9,9 @@ import { Company, CompanyDocument } from './companies.schema';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import { Model } from 'mongoose';
+import { SignupCompanyDto } from './dto/signup-company.dto';
+import { UpdateCompanyDto } from './dto/update-company.dto';
+import { getJwtSecret } from '../auth/jwt.config';
 
 @Injectable()
 export class CompaniesService {
@@ -16,24 +19,8 @@ export class CompaniesService {
     @InjectModel(Company.name) private companyModel: Model<CompanyDocument>,
   ) {}
 
-  async signup(
-    companyData: {
-      name: string,
-      email: string,
-      password: string,
-      slogan: string,
-      description: string,
-      address: string,
-      companySize: string,
-      city: string,
-    }    
-
-  ): Promise<{ message: string }> {
+  async signup(companyData: SignupCompanyDto): Promise<{ message: string }> {
     const { name, email, password, ...optionalFields } = companyData;
-
-    if (!name || !email || !password) {
-      throw new BadRequestException('All fields are required');
-    }
 
     const existingEmail = await this.companyModel.findOne({ email });
     if (existingEmail) {
@@ -52,9 +39,8 @@ export class CompaniesService {
       password: hashedPassword,
       ...optionalFields,
     });
-    // console.log(newCompany);
-    await newCompany.save();
 
+    await newCompany.save();
     return { message: 'Signup successful' };
   }
 
@@ -66,7 +52,7 @@ export class CompaniesService {
       throw new BadRequestException('All fields are required');
     }
 
-    const company = await this.companyModel.findOne({ email });
+    const company = await this.companyModel.findOne({ email }).select('+password');
     if (!company) {
       throw new UnauthorizedException('Invalid email or password');
     }
@@ -77,104 +63,98 @@ export class CompaniesService {
     }
 
     const token = jwt.sign(
-      { id: company._id.toString(), type: 'company' }, // Convert ObjectId to string
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' },
+      {
+        id: company._id.toString(),
+        type: 'company',
+        role: 'company',
+        email: company.email,
+      },
+      getJwtSecret(),
+      { expiresIn: '1d' },
     );
 
-    return { token, companyId: company._id.toString() }; // Ensure companyId is a string
+    return { token, companyId: company._id.toString() };
   }
 
   async updateCompany(
     id: string,
-    updateCompaniesDto: Partial<Company> & {
-      currentPassword?: string;
-      image?: string;
-    },
+    updateCompaniesDto: UpdateCompanyDto,
     file?: Express.Multer.File,
   ): Promise<Company> {
-    // console.log('image?', updateCompaniesDto.image);
+    const updatePayload: Record<string, any> = { ...updateCompaniesDto };
 
-    // console.log('Received DTO:', updateCompaniesDto);
-
-    if (updateCompaniesDto.image) {
-      // console.log(
-      //   '   Received image URL from frontend:',
-      //   updateCompaniesDto.image,
-      // );
-      updateCompaniesDto.logo = updateCompaniesDto.image;
-      delete updateCompaniesDto.image;
-    } else if (file) {
-      // console.log('   Received file from multer:', file.path);
-      updateCompaniesDto.logo = file.path;
+    if (updatePayload.image) {
+      updatePayload.logo = updatePayload.image;
+      delete updatePayload.image;
     }
-
-    // console.log('   Final logo:', updateCompaniesDto.logo);
-
-    // if (updateCompaniesDto.image) {
-    //   updateCompaniesDto.logo = updateCompaniesDto.image;
-    //   delete updateCompaniesDto.image; // Remove redundant field
-    //   console.log(
-    //     '   Assigned logo from frontend image field:',
-    //     updateCompaniesDto.logo,
-    //   );
-    // }
 
     if (file) {
-      updateCompaniesDto.logo = file.path; // Cloudinary image URL
-      // console.log('   Assigned logo from uploaded file:', file.path);
+      updatePayload.logo = file.path;
     }
-    if (updateCompaniesDto.password) {
-      const company = await this.companyModel.findById(id);
+
+    if (updatePayload.password) {
+      if (!updatePayload.currentPassword) {
+        throw new BadRequestException('Current password is required to change password');
+      }
+
+      const company = await this.companyModel.findById(id).select('+password');
       if (!company) {
-        throw new BadRequestException('Company not found');
+        throw new NotFoundException('Company not found');
       }
 
       const isPasswordMatching = bcrypt.compareSync(
-        updateCompaniesDto.currentPassword,
+        updatePayload.currentPassword,
         company.password,
       );
       if (!isPasswordMatching) {
         throw new BadRequestException('Incorrect current password');
       }
 
-      updateCompaniesDto.password = bcrypt.hashSync(
-        updateCompaniesDto.password,
-        10,
-      );
+      updatePayload.password = bcrypt.hashSync(updatePayload.password, 10);
+      delete updatePayload.currentPassword;
+    } else {
+      delete updatePayload.currentPassword;
     }
+
+    delete updatePayload._id;
 
     const updatedCompany = await this.companyModel.findByIdAndUpdate(
       id,
-      { $set: updateCompaniesDto },
-      { new: true, runValidators: true }
+      { $set: updatePayload },
+      { new: true, runValidators: true },
     );
-    
-    // console.log("Updated company:", updatedCompany);
-    
+
     if (!updatedCompany) {
-      throw new BadRequestException('Company not found');
+      throw new NotFoundException(`Company with ID ${id} not found`);
     }
 
     return updatedCompany;
   }
 
   async findOne(id: string): Promise<Company> {
-    const user = await this.companyModel.findById(id).exec();
-    if (!user) {
-      throw new NotFoundException(`Company with CompanyID ${id} not found`);
+    const company = await this.companyModel.findById(id).select('-password').exec();
+    if (!company) {
+      throw new NotFoundException(`Company with ID ${id} not found`);
     }
-    return user;
+    return company;
   }
 
-    async findAll(): Promise<Company[]> {
-      return this.companyModel.find().exec();
-    }
+  async findAll(page: number = 1, limit: number = 50): Promise<Company[]> {
+    const safeLimit = Math.min(Math.max(1, limit), 100);
+    const safePage = Math.max(1, page);
+    return this.companyModel
+      .find()
+      .select('-password')
+      .skip((safePage - 1) * safeLimit)
+      .limit(safeLimit)
+      .exec();
+  }
 
-    async deleteCompany(id: string): Promise<void> {
-      const result = await this.companyModel.findByIdAndDelete(id).exec();
-      if (!result) {
-        throw new NotFoundException(`Job with ID ${id} not found`);
-      }
+  async deleteCompany(id: string): Promise<{ deleted: boolean; message: string }> {
+    const result = await this.companyModel.findByIdAndDelete(id).exec();
+    if (!result) {
+      throw new NotFoundException(`Company with ID ${id} not found`);
     }
+    return { deleted: true, message: 'Company deleted successfully' };
+  }
 }

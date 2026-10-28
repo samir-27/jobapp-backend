@@ -9,59 +9,39 @@ import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import { User, UserDocument } from './users.schema';
-import { promises } from 'dns';
+import { SignupUserDto } from './dto/signup-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { getJwtSecret } from '../auth/jwt.config';
 
 @Injectable()
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async signup(userData: {
-    name: string;
-    email: string;
-    password: string;
-    fullname?: string;
-    phone?: string;
-    education?: string;
-    course?: string;
-    address?: string;
-    city?: string;
-    pincode?: string;
-    state?: string;
-  }): Promise<{ message: string }> {
+  async signup(userData: SignupUserDto): Promise<{ message: string }> {
     const { name, email, password, ...optionalFields } = userData;
-  
-    // Validate required fields
-    if (!name || !email || !password) {
-      throw new BadRequestException('Name, email, and password are required');
-    }
-  
-    // Check if email already exists
+
     const existingUser = await this.userModel.findOne({ email });
     if (existingUser) {
       throw new BadRequestException('Email already exists');
     }
-  
-    // Check if username already exists
+
     const existingUserByUsername = await this.userModel.findOne({ name });
     if (existingUserByUsername) {
       throw new BadRequestException('Username already exists');
     }
-  
-    // Hash password
+
     const hashedPassword = bcrypt.hashSync(password, 10);
-  
-    // Create new user with all fields
+
     const newUser = new this.userModel({
       name,
       email,
       password: hashedPassword,
-      ...optionalFields, // Spread additional optional fields
+      ...optionalFields,
     });
-  
+
     await newUser.save();
     return { message: 'Signup successful' };
   }
-  
 
   async signin(
     email: string,
@@ -71,7 +51,7 @@ export class UsersService {
       throw new BadRequestException('All fields are required');
     }
 
-    const user = await this.userModel.findOne({ email });
+    const user = await this.userModel.findOne({ email }).select('+password');
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
     }
@@ -82,9 +62,9 @@ export class UsersService {
     }
 
     const token = jwt.sign(
-      { id: user._id.toString(), type: 'user' },
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' },
+      { id: user._id.toString(), type: 'user', role: 'user', email: user.email },
+      getJwtSecret(),
+      { expiresIn: '1d' },
     );
 
     return { token, userId: user._id.toString() };
@@ -92,52 +72,61 @@ export class UsersService {
 
   async updateUser(
     id: string,
-    updateUsersDto: Partial<User> & {
-      currentPassword?: string;
-      image?: string;
-    },
+    updateUsersDto: UpdateUserDto,
     file?: Express.Multer.File,
   ): Promise<User> {
-    // console.log('Received update request for user:', id);
-    // console.log('Data received from frontend:', updateUsersDto);
-    // console.log('File received:', file ? file.path : 'No file uploaded');
-  
-    // Handle image upload if present
-    if (updateUsersDto.image) {
-      updateUsersDto.profileImg = updateUsersDto.image;
-      delete updateUsersDto.image; // Remove redundant field
+    const updatePayload: Record<string, any> = { ...updateUsersDto };
+
+    if (updatePayload.image) {
+      updatePayload.profileImg = updatePayload.image;
+      delete updatePayload.image;
     }
-  
+
     if (file) {
-      updateUsersDto.profileImg = file.path; // Cloudinary image URL
+      updatePayload.profileImg = file.path;
     }
-  
-    // Handle password update if present
-    if (updateUsersDto.password) {
-      const user = await this.userModel.findById(id);
-      if (!user) {
-        throw new BadRequestException('User not found');
+
+    if (updatePayload.password) {
+      if (!updatePayload.currentPassword) {
+        throw new BadRequestException('Current password is required to change password');
       }
-  
-      const isPasswordMatching = bcrypt.compareSync(updateUsersDto.currentPassword, user.password);
+
+      const user = await this.userModel.findById(id).select('+password');
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      const isPasswordMatching = bcrypt.compareSync(
+        updatePayload.currentPassword,
+        user.password,
+      );
       if (!isPasswordMatching) {
         throw new BadRequestException('Incorrect current password');
       }
-  
-      updateUsersDto.password = bcrypt.hashSync(updateUsersDto.password, 10); // Hash new password
+
+      updatePayload.password = bcrypt.hashSync(updatePayload.password, 10);
+      delete updatePayload.currentPassword;
+    } else {
+      delete updatePayload.currentPassword;
     }
-  
-    const updatedUser = await this.userModel.findByIdAndUpdate(id, { $set: updateUsersDto }, { new: true, runValidators: true });
-  
+
+    // Never allow updating privileged fields
+    delete updatePayload._id;
+    delete updatePayload.appliedJobs;
+    delete updatePayload.email;
+
+    const updatedUser = await this.userModel.findByIdAndUpdate(
+      id,
+      { $set: updatePayload },
+      { new: true, runValidators: true },
+    );
+
     if (!updatedUser) {
-      console.error('User not found for ID:', id);
-      throw new BadRequestException('User not found');
+      throw new NotFoundException(`User with ID ${id} not found`);
     }
-  
-    // console.log('User updated successfully:', updatedUser);
+
     return updatedUser;
   }
-  
 
   async findOne(id: string): Promise<User> {
     const user = await this.userModel.findById(id).exec();
@@ -147,14 +136,22 @@ export class UsersService {
     return user;
   }
 
-  async findAll(): Promise<User[]> {
-    return this.userModel.find().exec();
+  async findAll(page: number = 1, limit: number = 50): Promise<User[]> {
+    const safeLimit = Math.min(Math.max(1, limit), 100);
+    const safePage = Math.max(1, page);
+    return this.userModel
+      .find()
+      .select('-password')
+      .skip((safePage - 1) * safeLimit)
+      .limit(safeLimit)
+      .exec();
   }
 
-  async deleteUser(id: string): Promise<void> {
+  async deleteUser(id: string): Promise<{ deleted: boolean; message: string }> {
     const result = await this.userModel.findByIdAndDelete(id).exec();
     if (!result) {
-      throw new NotFoundException(`Job with ID ${id} not found`);
+      throw new NotFoundException(`User with ID ${id} not found`);
     }
+    return { deleted: true, message: 'User deleted successfully' };
   }
-}                     
+}

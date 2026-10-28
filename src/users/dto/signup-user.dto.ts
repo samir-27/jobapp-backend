@@ -1,0 +1,67 @@
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
+
+export class SignupUserDto {
+  @IsNotEmpty()
+  @IsString()
+  @MaxLength(100)
+  name: string;
+
+  @IsNotEmpty()
+  @IsEmail()
+  @MaxLength(255)
+  email: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @MinLength(8)
+  @MaxLength(100)
+  password: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  fullname?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^[0-9]{10}$/, { message: 'Phone must be a 10-digit number' })
+  phone?: string;
+
+  @IsOptional()
+  @IsEnum(['diploma', 'graduation', 'post-graduation'], {
+    message: 'Education must be diploma, graduation, or post-graduation',
+  })
+  education?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  course?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  address?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(6)
+  pincode?: string;
+
+  @IsOptional()
+  @IsString()
+  state?: string;
+}

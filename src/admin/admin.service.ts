@@ -1,62 +1,169 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Admin, AdminDocument } from './admin.schema';
+import { User, UserDocument } from '../users/users.schema';
+import { Company, CompanyDocument } from '../companies/companies.schema';
+import { Job, JobDocument } from '../jobs/jobs.schema';
+import { ApplyJob, ApplyJobDocument } from '../applyJobs/applyJobs.schema';
+import { Interview, InterviewDocument } from '../interviews/interview.schema';
+import { Offer, OfferDocument } from '../offers/offer.schema';
 import * as bcrypt from 'bcryptjs';
+import * as jwt from 'jsonwebtoken';
+import { AdminLoginDto } from './dto/admin-login.dto';
+import { AdminRegisterDto } from './dto/admin-register.dto';
+import { getJwtSecret } from '../auth/jwt.config';
+
 @Injectable()
 export class AdminService {
   constructor(
     @InjectModel(Admin.name) private adminModel: Model<AdminDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Company.name) private companyModel: Model<CompanyDocument>,
+    @InjectModel(Job.name) private jobModel: Model<JobDocument>,
+    @InjectModel(ApplyJob.name) private applyJobModel: Model<ApplyJobDocument>,
+    @InjectModel(Interview.name) private interviewModel: Model<InterviewDocument>,
+    @InjectModel(Offer.name) private offerModel: Model<OfferDocument>,
   ) {}
 
-  async register(email: string, password: string): Promise<Admin> {
-    const hashedPassword = await bcrypt.hash(password, 10);
-  
+  async register(
+    registerDto: AdminRegisterDto,
+    actorRole?: string,
+  ): Promise<{ message: string; admin: { id: string; email: string } }> {
+    const adminCount = await this.adminModel.countDocuments();
+
+    if (adminCount > 0 && actorRole !== 'admin') {
+      const configuredBootstrap = process.env.ADMIN_BOOTSTRAP_SECRET;
+      if (!configuredBootstrap || registerDto.bootstrapSecret !== configuredBootstrap) {
+        throw new ForbiddenException(
+          'Only an authorized administrator can register new admin accounts.',
+        );
+      }
+    }
+
+    const existing = await this.adminModel
+      .findOne({ email: registerDto.email })
+      .exec();
+    if (existing) {
+      throw new BadRequestException('Admin with this email already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
     const newAdmin = new this.adminModel({
-      email,
+      email: registerDto.email,
       password: hashedPassword,
     });
-  
-    return newAdmin.save();
+
+    const saved = await newAdmin.save();
+    return {
+      message: 'Admin registered successfully',
+      admin: {
+        id: saved._id.toString(),
+        email: saved.email,
+      },
+    };
   }
-  async signIn(email: string, password: string): Promise<Admin> {
-    const admin = await this.adminModel.findOne({ email }).exec();
-    // console.log('Admin found:', admin);
-  
+
+  async signIn(
+    loginDto: AdminLoginDto,
+  ): Promise<{ token: string; admin: { id: string; email: string } }> {
+    const admin = await this.adminModel
+      .findOne({ email: loginDto.email })
+      .select('+password')
+      .exec();
+
     if (!admin) {
       throw new UnauthorizedException('Invalid email or password');
     }
-  
-    const isMatch = await bcrypt.compare(password, admin.password);
-    // console.log('Password match:', isMatch);
-  
+
+    const isMatch = await bcrypt.compare(loginDto.password, admin.password);
     if (!isMatch) {
       throw new UnauthorizedException('Invalid email or password');
     }
-  
-    return admin;
+
+    const token = jwt.sign(
+      {
+        id: admin._id.toString(),
+        type: 'admin',
+        role: 'admin',
+        email: admin.email,
+      },
+      getJwtSecret(),
+      { expiresIn: '1d' },
+    );
+
+    return {
+      token,
+      admin: {
+        id: admin._id.toString(),
+        email: admin.email,
+      },
+    };
   }
 
-  //hardcoded admin creation on startup
+  // ── Operational Analytics ───────────────────────────────────────────────────
 
-//   async onModuleInit() {
-//     await this.createHardcodedAdmin();
-//   }
+  async getPlatformStats() {
+    const [
+      totalUsers,
+      totalCompanies,
+      totalJobs,
+      activeJobs,
+      totalApplications,
+      totalInterviews,
+      totalOffers,
+    ] = await Promise.all([
+      this.userModel.countDocuments(),
+      this.companyModel.countDocuments(),
+      this.jobModel.countDocuments(),
+      this.jobModel.countDocuments({ status: 'published' }),
+      this.applyJobModel.countDocuments(),
+      this.interviewModel.countDocuments(),
+      this.offerModel.countDocuments(),
+    ]);
 
-//   private async createHardcodedAdmin() {
-//     const email = 'samir@gmail.com';
-//     const password = 'samir1234';
+    return {
+      totalUsers,
+      totalCompanies,
+      totalJobs,
+      activeJobs,
+      totalApplications,
+      totalInterviews,
+      totalOffers,
+    };
+  }
 
-//     const exists = await this.adminModel.findOne({ email });
-//     if (exists) {
-//       console.log(' Admin already exists. Skipping creation.');
-//       return;
-//     }
+  // ── Moderation Controls ─────────────────────────────────────────────────────
 
-//     const hashedPassword = await bcrypt.hash(password, 10);
-//     const newAdmin = new this.adminModel({ email, password: hashedPassword });
-//     await newAdmin.save();
+  async updateUserStatus(userId: string, status: 'active' | 'suspended') {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestException('Invalid user ID');
+    }
+    const user = await this.userModel.findByIdAndUpdate(
+      userId,
+      { $set: { accountStatus: status } },
+      { new: true },
+    );
+    if (!user) throw new NotFoundException('User not found');
+    return { message: `User account status set to ${status}`, user };
+  }
 
-//     console.log(` Admin created on startup: ${email}`);
-//   }
+  async updateCompanyStatus(companyId: string, status: 'active' | 'suspended') {
+    if (!Types.ObjectId.isValid(companyId)) {
+      throw new BadRequestException('Invalid company ID');
+    }
+    const company = await this.companyModel.findByIdAndUpdate(
+      companyId,
+      { $set: { accountStatus: status } },
+      { new: true },
+    );
+    if (!company) throw new NotFoundException('Company not found');
+    return { message: `Company account status set to ${status}`, company };
+  }
 }
